@@ -63,20 +63,42 @@
       ;; outside the map, we are done
       nil nil
       ;; an obstacle, turn right
-      \# (let [new-direction (turn-right direction)
-               [turn-row-index turn-column-index] (row-and-column-in-direction row-index column-index new-direction)]
-           [turn-row-index turn-column-index new-direction]))))
+      \# (let [new-direction (turn-right direction)] [row-index column-index new-direction]))))
 
 (defn simulate-guard-movements [data]
   (let [[guard-start-location updated-data] (parse-data data)
-        [guard-start-row-index guard-start-column-index] guard-start-location]
-    (loop [guard-movements #{[guard-start-row-index guard-start-column-index]}
-           last-movement [guard-start-row-index guard-start-column-index :up]]
+        guard-start-movement (conj guard-start-location :up)
+        [guard-start-row-id guard-start-column-id] guard-start-location]
+    (loop [guard-movements #{guard-start-location}
+           last-movement guard-start-movement
+           loop-count 0
+           visited-move-set #{}]
       (let [[guard-row-index guard-column-index direction] last-movement
             next-guard-move (simulate-guard-movement updated-data guard-row-index guard-column-index direction)
-            [new-row-index new-column-index direction] next-guard-move]
-        (if (or (nil? next-guard-move) (= next-guard-move guard-start-location))
-          (count guard-movements)
-          (recur (conj guard-movements [new-row-index new-column-index]) next-guard-move))))))
+            [new-row-index new-column-index direction] next-guard-move
+            new-loop-count (if (contains? visited-move-set next-guard-move) (inc loop-count) loop-count)
+            looping (> new-loop-count 1)]
+        (if (or (nil? next-guard-move) looping)
+          [(count guard-movements) looping]
+          (recur (conj guard-movements [new-row-index new-column-index]) next-guard-move new-loop-count (conj visited-move-set next-guard-move)))))))
 
+(defn insert-obstacle-at-row-column [data row column]
+  (map-indexed (fn [idx line] (if (= idx row)
+                                (str (subs line 0 column) "#" (subs line (inc column)))
+                                line)) data))
 
+(defn part-one [data] (first (simulate-guard-movements data)))
+
+(defn part-two [data]
+  (let [rows (count data)
+        columns (count (first data))]
+    (count (filter true? (map (fn [[obstacle-row obstacle-column]]
+                                (println obstacle-row)
+                                (if (= (nth (nth data obstacle-row) obstacle-column) \.)
+                                  (let [situation (insert-obstacle-at-row-column data obstacle-row obstacle-column)
+                                        [_ looping] (simulate-guard-movements situation)]
+                                    looping)
+                                  ;; if there is already an obstacle at the location, then no need to test it (it doesn't loop)
+                                  false))
+                              (for [row (range 0 rows)
+                                    column (range 0 columns)] [row column]))))))
