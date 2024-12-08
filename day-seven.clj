@@ -23,6 +23,10 @@
                     [test-value equation-values])) data))
 
 
+
+(def part-one-operations [:sum :mul])
+(def part-two-operations [:sum :mul :concat])
+
 (defn apply-operations [equation-values operations]
   (reduce (fn [acc [op val]]
             (case op
@@ -33,7 +37,7 @@
           (first equation-values) (map vector operations (rest equation-values))))
 
 (defn all-operations [required-operations]
-  (let [ops [:sum :mul :concat]]
+  (let [ops part-two-operations]
     (reduce (fn [acc _] (for [combo acc op ops] (conj combo op)))
             [[]] (range required-operations))))
 
@@ -48,7 +52,7 @@
 (defn sum-of-valid-equations [equations]
   (reduce + (map first equations)))
 
-(defn part-one [data]
+(defn which-valid-operations [data]
   (-> data
       parse-data
       filter-for-valid-equations
