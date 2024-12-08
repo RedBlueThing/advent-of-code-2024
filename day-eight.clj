@@ -33,8 +33,6 @@
 
 (def real-data-raw (str/split-lines (slurp "day-eight.txt")))
 
-(defn combine-dictionary-reducer [[k v]])
-
 (defn combine-frequency-dictionaries [frequency-dictionaries]
   (reduce (fn [combined-dictionary locations] (merge-with into combined-dictionary locations)) {} frequency-dictionaries))
 
@@ -79,18 +77,21 @@
         [bottom-row bottom-column] bottom-location
         orientation (orientation-for-locations top-location bottom-location)]
     (let [row-distance-between (- bottom-row top-row)
-          column-distance-between (Math/abs (- bottom-column top-column))]
+          column-distance-between (Math/abs (- bottom-column top-column))
+          resonant-range-left (fn [column-at-edge] (if resonant-harmonics (range 1 (inc (/ column-at-edge column-distance-between))) [1]))
+          resonant-range-right (fn [column-at-edge] (if resonant-harmonics (range 1 (inc (/ (- columns column-at-edge) column-distance-between))) [1]))]
 
       (assert (not (or (= orientation :e) (= orientation :s))))
 
-      (concat (if resonant-harmonics [first-location second-location] []) (case orientation
-                                                                     :se (concat
-                                                                          (map (fn [mult] [(- top-row (* mult row-distance-between)) (- top-column (* mult column-distance-between))]) (if resonant-harmonics (range 1 (inc (/ top-column column-distance-between))) [1]))
-                                                                          (map (fn [mult] [(+ bottom-row (* mult row-distance-between)) (+ bottom-column (* mult column-distance-between))]) (if resonant-harmonics (range 1 (inc (/ (- columns bottom-column) column-distance-between))) [1])))
+      (concat (if resonant-harmonics [first-location second-location] [])
+              (case orientation
+                :se (concat
+                     (map (fn [mult] [(- top-row (* mult row-distance-between)) (- top-column (* mult column-distance-between))]) (resonant-range-left top-column))
+                     (map (fn [mult] [(+ bottom-row (* mult row-distance-between)) (+ bottom-column (* mult column-distance-between))]) (resonant-range-right bottom-column)))
 
-                                                                     :ne (concat
-                                                                          (map (fn [mult] [(- top-row (* mult row-distance-between)) (+ top-column (* mult column-distance-between))]) (if resonant-harmonics (range 1 (inc (/ (- columns top-column) column-distance-between))) [1]))
-                                                                          (map (fn [mult] [(+ bottom-row (* mult row-distance-between)) (- bottom-column (* mult column-distance-between))]) (if resonant-harmonics (range 1 (inc (/ bottom-column column-distance-between))) [1]))))))))
+                :ne (concat
+                     (map (fn [mult] [(- top-row (* mult row-distance-between)) (+ top-column (* mult column-distance-between))]) (resonant-range-right top-column))
+                     (map (fn [mult] [(+ bottom-row (* mult row-distance-between)) (- bottom-column (* mult column-distance-between))]) (resonant-range-left bottom-column))))))))
 
 (defn solve [data resonant-harmonics]
   (let [antenna-data (parse-data data)]
