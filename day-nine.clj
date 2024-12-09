@@ -123,9 +123,7 @@
                 ;; entry with the remainder (if any)
                 (let [[target-count target-file-id] (nth current-disk-map target-index)
                       ;; we need a version of the current disk map with the
-                      ;; block we are moving removed. We can do that because we
-                      ;; know the item is on the right of the target-index (so
-                      ;; it won't break that index)
+                      ;; block we are moving removed. 
                       updated-disk-map (assoc (vec current-disk-map) source-index [count nil])]
                   (assert (nil? target-file-id))
                   (assert (<= count target-count))
