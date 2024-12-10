@@ -91,16 +91,17 @@
   ;; return a distinct set of endpoints for valid hiking trails
 
   ;; is this an endpoint?
-  (if (= (height-at-row-column data [row column]) 9)
-    #{[row column]}
-    ;; otherwise keep looking
-    (let [next-steps (viable-next-steps data [row column])]
-      (reduce set/union (map
-                         (fn [[row column]] (find-distinct-hiking-trails data [row column] []))
-                         next-steps)))))
+  (let [updated-distinct-trails (map #(conj % [row column]) distinct-trails)]
+    (if (= (height-at-row-column data [row column]) 9)
+      (set updated-distinct-trails)
+      ;; otherwise keep looking
+      (let [next-steps (viable-next-steps data [row column])]
+        (reduce set/union (map
+                         (fn [[row column]] (find-distinct-hiking-trails data [row column] updated-distinct-trails))
+                         next-steps))))))
 
 (defn score-trailhead [data [row column] find-trails-fn]
-  (count (find-trails-fn data [row column] [])))
+  (count (find-trails-fn data [row column] [[]])))
 
 (defn part-one [data]
   (reduce + (map (fn [[row column]] (score-trailhead data [row column] find-hiking-trails)) (trailheads data))))
