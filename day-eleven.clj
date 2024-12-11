@@ -15,9 +15,9 @@
 (def real-data-raw (str/split-lines (slurp "day-eleven.txt")))
 
 (defn parse-data [data]
-  (map #(Integer/parseInt %) (str/split (first data) #" ")))
+  (map #(Long/parseLong  %) (str/split (first data) #" ")))
 
-(defn core-apply-rules [stone-number]
+(defn core-apply-rules-to-stone [stone-number]
 
   (let [stone-str (str stone-number)]
     (cond
@@ -30,7 +30,8 @@
       ;; new left stone, and the right half of the digits are engraved on the new
       ;; right stone. (The new numbers don't keep extra leading zeroes: 1000 would
       ;; become stones 10 and 0.)
-      (= (mod (count stone-str) 2) 0) (let [i (/ (count stone-str) 2)] [(Integer/parseInt (subs stone-str 0 i)) (Integer/parseInt (subs stone-str i))])
+      (= (mod (count stone-str) 2) 0) (let [i (/ (count stone-str) 2)]
+                                        [(Long/parseLong (subs stone-str 0 i)) (Long/parseLong (subs stone-str i))])
 
       ;; 3. If none of the other rules apply, the stone is replaced by a new stone;
       ;; the old stone's number multiplied by 2024 is engraved on the new stone.
@@ -38,19 +39,29 @@
 
     )))
 
-(def apply-rules (memoize core-apply-rules))
+(def apply-rules-to-stone (memoize core-apply-rules-to-stone))
 
-(defn core-apply-rules-to-stones-reducer [stones index]
+(def apply-rules
+  (memoize (fn [maybe-stones]
+             (if (vector? maybe-stones)
+                         (vec (map apply-rules maybe-stones))
+                         (apply-rules-to-stone maybe-stones)))))
+
+(defn apply-rules-to-stones-reducer [stones index]
   (println index)
-  (apply concat (map apply-rules stones)))
-
-(def apply-rules-to-stones-reducer (memoize core-apply-rules-to-stones-reducer))
+  (map apply-rules stones))
 
 (defn apply-rules-to-stones [stones blinks]
-  (reduce apply-rules-to-stones-reducer stones (range 0 blinks)))
+  (vec (reduce apply-rules-to-stones-reducer stones (range 0 blinks))))
+
+(def count-non-vectors
+  (memoize (fn [nested-coll]
+  (if (vector? nested-coll)
+    (reduce + (map count-non-vectors nested-coll))
+    1))))
 
 (defn part-one [data]
-  (count (apply-rules-to-stones (parse-data data) 25)))
+  (count-non-vectors (apply-rules-to-stones (parse-data data) 25)))
 
 (defn part-two [data]
-  (count (apply-rules-to-stones (parse-data data) 75)))
+  (count-non-vectors (apply-rules-to-stones (parse-data data) 75)))
