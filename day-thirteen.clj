@@ -60,15 +60,13 @@
   (let [norm (sqrt (+ 1 (* gradient gradient)))]
     [(/ 1.0 norm) (/ gradient norm)]))
 
-(def maximum-presses-part-one 100)
-(def maximum-presses-part-two ##Inf)
-
 (defn calculate-a-and-b-presses [{button-a-x :button-a-x
                                   button-a-y :button-a-y
                                   button-b-x :button-b-x
                                   button-b-y :button-b-y
                                   prize-x :prize-x
-                                  prize-y :prize-y}]
+                                  prize-y :prize-y}
+                                 maximum-presses]
   (let [gradient-a (gradient-for-x-y-offset button-a-x button-a-y)
         gradient-b (gradient-for-x-y-offset button-b-x button-b-y)
         [a-x a-y] (normalize-vector gradient-a)
@@ -92,8 +90,8 @@
             b-length (+ (* inv-10 prize-x) (* inv-11 prize-y))
             a-presses (button-presses-for-length a-length button-a-x button-a-y)
             b-presses (button-presses-for-length b-length button-b-x button-b-y)]
-        (if (and (<= a-presses maximum-presses-part-two)
-                 (<= b-presses maximum-presses-part-two)
+        (if (and (<= a-presses maximum-presses)
+                 (<= b-presses maximum-presses)
                  (> a-presses 0)
                  (> b-presses 0))
           [a-presses b-presses]
@@ -116,16 +114,21 @@
       ;; if the calculated x and calculated-y don't line up with the prize, then ignore this result.
       [0 0])))
 
-(defn solve [claw-machines]
+(defn solve [claw-machines maximum-presses]
   (reduce + (map
              (fn [claw-machine]
 
-               (let [[a-presses b-presses] (calculate-a-and-b-presses claw-machine)
+               (let [[a-presses b-presses] (calculate-a-and-b-presses claw-machine maximum-presses)
                      [verified-a-presses verified-b-presses] (verify-presses claw-machine a-presses b-presses)]
                  (+ (* a-cost verified-a-presses) (* b-cost verified-b-presses)))) claw-machines)))
 
+
+(def maximum-presses-part-one 100)
+(def maximum-presses-part-two ##Inf)
+
+
 (defn part-one [data]
-  (solve (parse-data data)))
+  (solve (parse-data data) maximum-presses-part-one))
 
 (defn adjust-for-part-two [claw-machines]
   (map (fn [claw-machine]
@@ -133,4 +136,4 @@
                              [:prize-y (+ (claw-machine :prize-y) 10000000000000)]])) claw-machines))
 
 (defn part-two [data]
-  (solve (adjust-for-part-two (parse-data data))))
+  (solve (adjust-for-part-two (parse-data data)) maximum-presses-part-two))
